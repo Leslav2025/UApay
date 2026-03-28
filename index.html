@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -9,16 +8,22 @@
         body { background: #000; color: white; text-align: center; font-family: sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; height: 100vh; overflow: hidden; user-select: none; }
         #header { width: 90%; display: flex; justify-content: space-between; align-items: center; padding: 15px 0; }
         #wallet-btn { background: #0088cc; border: none; padding: 8px 15px; border-radius: 20px; color: #fff; font-weight: bold; cursor: pointer; }
-        #score { font-size: 65px; font-weight: bold; margin: 15px 0; }
-        .coin-wrap { width: 280px; height: 280px; border-radius: 50%; overflow: hidden; border: 4px solid #333; position: relative; box-shadow: 0 0 25px rgba(255,204,0,0.2); }
-        #coin { width: 100%; height: 100%; object-fit: cover; cursor: pointer; transition: transform 0.05s; }
-        #coin:active { transform: scale(0.96); }
+        #score { font-size: 65px; font-weight: bold; margin: 10px 0; }
+        #league-box { color: #ffcc00; font-size: 14px; font-weight: bold; margin-bottom: 5px; text-transform: uppercase; }
+        #mult-info { color: #555; font-size: 12px; margin-bottom: 10px; }
+        
+        .coin-wrap { width: 280px; height: 280px; border-radius: 50%; overflow: hidden; border: 4px solid #333; position: relative; box-shadow: 0 0 25px rgba(255,204,0,0.2); transition: transform 0.05s; }
+        #coin { width: 100%; height: 100%; object-fit: cover; cursor: pointer; }
+        .coin-active { transform: scale(0.92); }
+        
         #energy-wrap { width: 80%; margin-top: 25px; }
         #energy-bar { width: 100%; height: 10px; background: #333; border-radius: 10px; overflow: hidden; }
         #energy-fill { width: 100%; height: 100%; background: #ffcc00; transition: width 0.1s; }
+        
         #nav { position: absolute; bottom: 20px; width: 90%; background: #111; display: flex; justify-content: space-around; padding: 15px 0; border-radius: 20px; border: 1px solid #222; }
-        .nav-item { color: #888; font-size: 14px; cursor: pointer; }
+        .nav-item { color: #888; font-size: 13px; cursor: pointer; text-align: center; }
         .nav-item.active { color: #fff; font-weight: bold; }
+
         .plus-one { position: absolute; color: white; font-size: 30px; font-weight: bold; animation: up 0.7s forwards; pointer-events: none; }
         @keyframes up { to { opacity: 0; transform: translateY(-100px); } }
     </style>
@@ -30,9 +35,11 @@
     </div>
 
     <div id="score">0</div>
+    <div id="league-box">Мідна Ліга</div>
+    <div id="mult-info">Сила кліку: x<span id="mult-val">1</span></div>
 
-    <div class="coin-wrap">
-        <img id="coin" src="1774571977298.png?v=sound_fixed" alt="Coin">
+    <div class="coin-wrap" id="coin-container">
+        <img id="coin" src="1774571977298.png?v=boost" alt="Coin">
     </div>
 
     <div id="energy-wrap">
@@ -42,52 +49,80 @@
 
     <div id="nav">
         <div class="nav-item active">Клікер</div>
-        <div class="nav-item" onclick="tg.showAlert('Запрошуй друзів!')">Друзі</div>
-        <div class="nav-item" onclick="tg.showAlert('Лідерборд оновлюється...')">ТОП</div>
+        <div class="nav-item" onclick="buyBoost()">🚀 Boost (500)</div>
+        <div class="nav-item" onclick="tg.showAlert('ТОП скоро!')">ТОП</div>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        // Завантажуємо звук з мережі
         const clickSound = new Audio('https://www.soundjay.com/buttons/sounds/button-16.mp3');
-        clickSound.volume = 0.5;
-
+        
         let score = parseInt(localStorage.getItem('ua_pay_score')) || 0;
+        let mult = parseInt(localStorage.getItem('ua_pay_mult')) || 1;
         let energy = 1000;
 
-        document.getElementById('score').innerText = score;
+        function updateUI() {
+            document.getElementById('score').innerText = score;
+            document.getElementById('mult-val').innerText = mult;
+            
+            const lb = document.getElementById('league-box');
+            if (score < 1000) lb.innerText = "Новачок";
+            else if (score < 5000) lb.innerText = "Мідна Ліга";
+            else if (score < 15000) lb.innerText = "Срібна Ліга";
+            else lb.innerText = "Золота Ліга";
+        }
+
         document.getElementById('user-name').innerText = tg.initDataUnsafe?.user?.first_name || "Гість";
+        updateUI();
 
         document.getElementById('coin').onclick = (e) => {
-            if (energy <= 0) {
+            if (energy < mult) {
                 if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
                 return;
             }
 
-            // Відтворюємо звук (скидаємо час на 0, щоб можна було клікати часто)
             clickSound.currentTime = 0;
-            clickSound.play().catch(() => {}); // Ігноруємо помилки, якщо браузер блокує звук
+            clickSound.play().catch(() => {});
+            
+            const container = document.getElementById('coin-container');
+            container.classList.add('coin-active');
+            setTimeout(() => container.classList.remove('coin-active'), 50);
 
             if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
 
-            score++;
-            energy--;
+            score += mult;
+            energy -= mult;
             
-            document.getElementById('score').innerText = score;
             localStorage.setItem('ua_pay_score', score);
+            updateUI();
+            
             document.getElementById('energy-fill').style.width = (energy/10) + '%';
-            document.getElementById('energy-val').innerText = energy;
+            document.getElementById('energy-val').innerText = Math.max(0, energy);
 
             const p = document.createElement('div');
-            p.innerText = '+1'; p.className = 'plus-one';
+            p.innerText = '+' + mult; p.className = 'plus-one';
             p.style.left = e.pageX + 'px'; p.style.top = e.pageY + 'px';
             document.body.appendChild(p);
             setTimeout(() => p.remove(), 700);
         };
 
-        setInterval(() => { if(energy < 1000) { energy++; document.getElementById('energy-fill').style.width = (energy/10) + '%'; document.getElementById('energy-val').innerText = energy; } }, 1500);
+        window.buyBoost = () => {
+            const cost = 500 * mult;
+            if (score >= cost) {
+                score -= cost;
+                mult++;
+                localStorage.setItem('ua_pay_score', score);
+                localStorage.setItem('ua_pay_mult', mult);
+                updateUI();
+                tg.showAlert('Прокачано! Тепер твій клік: x' + mult);
+            } else {
+                tg.showAlert('Потрібно ' + cost + ' монет!');
+            }
+        };
+
+        setInterval(() => { if(energy < 1000) { energy = Math.min(1000, energy + 2); document.getElementById('energy-fill').style.width = (energy/10) + '%'; document.getElementById('energy-val').innerText = energy; } }, 1000);
     </script>
 </body>
 </html>
