@@ -8,47 +8,57 @@
     <title>UA pay</title>
     <style>
         body { background: #000; color: white; text-align: center; font-family: sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
-        #user-name { font-size: 18px; color: #aaa; margin-bottom: 10px; }
-        h1 { font-size: 60px; margin: 10px 0; color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.3); }
-        .coin-container { width: 250px; height: 250px; position: relative; }
-        img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; cursor: pointer; transition: transform 0.05s; box-shadow: 0 0 30px rgba(255, 204, 0, 0.4); }
-        img:active { transform: scale(0.92); }
+        
+        #header { position: absolute; top: 15px; width: 90%; display: flex; justify-content: space-between; align-items: center; }
+        #user-info { font-size: 14px; color: #aaa; text-align: left; }
+        
+        #wallet-btn { background: #0088cc; color: white; border: none; padding: 8px 15px; border-radius: 20px; font-weight: bold; cursor: pointer; font-size: 13px; box-shadow: 0 0 10px rgba(0, 136, 204, 0.4); }
+
+        h1 { font-size: 70px; margin: 10px 0; color: #fff; text-shadow: 0 0 15px rgba(255,255,255,0.2); transition: transform 0.1s; }
+        .coin-container { width: 280px; height: 280px; }
+        img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; cursor: pointer; transition: transform 0.05s; box-shadow: 0 0 40px rgba(255, 204, 0, 0.3); }
+        img:active { transform: scale(0.95); }
     </style>
 </head>
 <body>
-    <div id="user-name">Завантаження...</div>
+
+    <div id="header">
+        <div id="user-info">Гравець:<br><b id="user-name">Завантаження...</b></div>
+        <button id="wallet-btn" onclick="connectWallet()">Connect Wallet</button>
+    </div>
+
     <h1 id="score">0</h1>
+    
     <div class="coin-container">
         <img id="coin" src="1774571977298.png" alt="Coin">
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
-        tg.expand(); // Розгортає гру на весь екран
+        tg.expand();
 
         const userName = document.getElementById('user-name');
         const scoreEl = document.getElementById('score');
         
-        // Отримуємо ім'я з Телеграм
         if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-            userName.innerText = "Гравець: " + tg.initDataUnsafe.user.first_name;
+            userName.innerText = tg.initDataUnsafe.user.first_name + (tg.initDataUnsafe.user.last_name ? " " + tg.initDataUnsafe.user.last_name : "");
         } else {
-            userName.innerText = "Гравець: Гість";
+            userName.innerText = "Гість";
         }
 
-        let s = localStorage.getItem('ua_pay_score') || 0;
+        let s = parseInt(localStorage.getItem('ua_pay_score')) || 0;
         scoreEl.innerText = s;
 
         document.getElementById('coin').onclick = () => {
             s++;
             scoreEl.innerText = s;
             localStorage.setItem('ua_pay_score', s);
-            
-            // Легка вібрація при кліку (тільки на телефонах)
-            if (tg.HapticFeedback) {
-                tg.HapticFeedback.impactOccurred('light');
-            }
+            if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
         };
+
+        function connectWallet() {
+            tg.showAlert("Функція підключення TON гаманця розробляється. Скоро ви зможете виводити свої UA pay!");
+        }
     </script>
 </body>
 </html>
