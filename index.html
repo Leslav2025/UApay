@@ -1,24 +1,32 @@
-
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>UA pay</title>
     <style>
-        body { background: #000; color: white; text-align: center; font-family: sans-serif; margin-top: 50px; }
-        img { width: 200px; cursor: pointer; border-radius: 50%; }
-        h1 { font-size: 50px; }
+        body { background: #000; color: white; text-align: center; font-family: sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
+        h1 { font-size: 60px; margin: 20px 0; }
+        .coin-container { width: 250px; height: 250px; }
+        img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; cursor: pointer; transition: transform 0.1s; box-shadow: 0 0 20px rgba(0, 255, 255, 0.5); }
+        img:active { transform: scale(0.95); }
     </style>
 </head>
 <body>
     <h1 id="score">0</h1>
-    <img id="coin" src="1774571977298.png" alt="Coin">
+    <div class="coin-container">
+        <img id="coin" src="1774571977298.png" alt="Coin">
+    </div>
 
     <script>
-        let s = 0;
+        let s = localStorage.getItem('ua_pay_score') || 0;
+        const scoreEl = document.getElementById('score');
+        scoreEl.innerText = s;
+
         document.getElementById('coin').onclick = () => {
             s++;
-            document.getElementById('score').innerText = s;
+            scoreEl.innerText = s;
+            localStorage.setItem('ua_pay_score', s);
         };
     </script>
 </body>
