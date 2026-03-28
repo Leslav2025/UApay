@@ -1,32 +1,53 @@
+
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <title>UA pay</title>
     <style>
         body { background: #000; color: white; text-align: center; font-family: sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
-        h1 { font-size: 60px; margin: 20px 0; }
-        .coin-container { width: 250px; height: 250px; }
-        img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; cursor: pointer; transition: transform 0.1s; box-shadow: 0 0 20px rgba(0, 255, 255, 0.5); }
-        img:active { transform: scale(0.95); }
+        #user-name { font-size: 18px; color: #aaa; margin-bottom: 10px; }
+        h1 { font-size: 60px; margin: 10px 0; color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.3); }
+        .coin-container { width: 250px; height: 250px; position: relative; }
+        img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; cursor: pointer; transition: transform 0.05s; box-shadow: 0 0 30px rgba(255, 204, 0, 0.4); }
+        img:active { transform: scale(0.92); }
     </style>
 </head>
 <body>
+    <div id="user-name">Завантаження...</div>
     <h1 id="score">0</h1>
     <div class="coin-container">
         <img id="coin" src="1774571977298.png" alt="Coin">
     </div>
 
     <script>
-        let s = localStorage.getItem('ua_pay_score') || 0;
+        const tg = window.Telegram.WebApp;
+        tg.expand(); // Розгортає гру на весь екран
+
+        const userName = document.getElementById('user-name');
         const scoreEl = document.getElementById('score');
+        
+        // Отримуємо ім'я з Телеграм
+        if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+            userName.innerText = "Гравець: " + tg.initDataUnsafe.user.first_name;
+        } else {
+            userName.innerText = "Гравець: Гість";
+        }
+
+        let s = localStorage.getItem('ua_pay_score') || 0;
         scoreEl.innerText = s;
 
         document.getElementById('coin').onclick = () => {
             s++;
             scoreEl.innerText = s;
             localStorage.setItem('ua_pay_score', s);
+            
+            // Легка вібрація при кліку (тільки на телефонах)
+            if (tg.HapticFeedback) {
+                tg.HapticFeedback.impactOccurred('light');
+            }
         };
     </script>
 </body>
