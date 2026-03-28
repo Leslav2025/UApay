@@ -7,17 +7,17 @@
     <style>
         body { background: #000; color: white; text-align: center; font-family: sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; height: 100vh; overflow: hidden; user-select: none; }
         #header { width: 90%; display: flex; justify-content: space-between; align-items: center; padding: 15px 0; }
-        #score { font-size: 60px; font-weight: bold; margin: 20px 0; }
-        
-        /* Монета в рамці */
-        .coin-wrap { width: 280px; height: 280px; border-radius: 50%; overflow: hidden; border: 4px solid #333; position: relative; }
+        #wallet-btn { background: #0088cc; border: none; padding: 8px 15px; border-radius: 20px; color: #fff; font-weight: bold; cursor: pointer; }
+        #score { font-size: 65px; font-weight: bold; margin: 15px 0; }
+        .coin-wrap { width: 280px; height: 280px; border-radius: 50%; overflow: hidden; border: 4px solid #333; position: relative; box-shadow: 0 0 25px rgba(255,204,0,0.2); }
         #coin { width: 100%; height: 100%; object-fit: cover; cursor: pointer; transition: transform 0.05s; }
         #coin:active { transform: scale(0.96); }
-        
-        #energy-wrap { width: 80%; margin-top: 30px; }
+        #energy-wrap { width: 80%; margin-top: 25px; }
         #energy-bar { width: 100%; height: 10px; background: #333; border-radius: 10px; overflow: hidden; }
         #energy-fill { width: 100%; height: 100%; background: #ffcc00; transition: width 0.1s; }
-        
+        #nav { position: absolute; bottom: 20px; width: 90%; background: #111; display: flex; justify-content: space-around; padding: 15px 0; border-radius: 20px; border: 1px solid #222; }
+        .nav-item { color: #888; font-size: 14px; cursor: pointer; }
+        .nav-item.active { color: #fff; font-weight: bold; }
         .plus-one { position: absolute; color: white; font-size: 30px; font-weight: bold; animation: up 0.7s forwards; pointer-events: none; }
         @keyframes up { to { opacity: 0; transform: translateY(-100px); } }
     </style>
@@ -25,23 +25,33 @@
 <body>
     <div id="header">
         <div style="font-size:12px;color:#888;text-align:left;">Гравець:<br><b id="user-name">...</b></div>
-        <div style="font-size:12px;color:#888;">UA pay v1.3</div>
+        <button id="wallet-btn" onclick="tg.showAlert('Твій баланс UA pay збережено!')">Wallet</button>
     </div>
 
     <div id="score">0</div>
 
     <div class="coin-wrap">
-        <img id="coin" src="1774571977298.png?v=fixed" alt="Coin">
+        <img id="coin" src="1774571977298.png?v=sound_fixed" alt="Coin">
     </div>
 
     <div id="energy-wrap">
         <div id="energy-bar"><div id="energy-fill"></div></div>
-        <div style="margin-top:5px">⚡ <span id="energy-val">1000</span></div>
+        <div style="margin-top:5px; font-size:14px;">⚡ <span id="energy-val">1000</span> / 1000</div>
+    </div>
+
+    <div id="nav">
+        <div class="nav-item active">Клікер</div>
+        <div class="nav-item" onclick="tg.showAlert('Запрошуй друзів!')">Друзі</div>
+        <div class="nav-item" onclick="tg.showAlert('Лідерборд оновлюється...')">ТОП</div>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
+
+        // Завантажуємо звук з мережі
+        const clickSound = new Audio('https://www.soundjay.com/buttons/sounds/button-16.mp3');
+        clickSound.volume = 0.5;
 
         let score = parseInt(localStorage.getItem('ua_pay_score')) || 0;
         let energy = 1000;
@@ -51,15 +61,15 @@
 
         document.getElementById('coin').onclick = (e) => {
             if (energy <= 0) {
-                // Вібрація помилки, якщо нема енергії
                 if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
                 return;
             }
 
-            // ВІБРАЦІЯ при кліку
-            if (tg.HapticFeedback) {
-                tg.HapticFeedback.impactOccurred('medium'); 
-            }
+            // Відтворюємо звук (скидаємо час на 0, щоб можна було клікати часто)
+            clickSound.currentTime = 0;
+            clickSound.play().catch(() => {}); // Ігноруємо помилки, якщо браузер блокує звук
+
+            if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
 
             score++;
             energy--;
@@ -69,7 +79,6 @@
             document.getElementById('energy-fill').style.width = (energy/10) + '%';
             document.getElementById('energy-val').innerText = energy;
 
-            // Анімація +1
             const p = document.createElement('div');
             p.innerText = '+1'; p.className = 'plus-one';
             p.style.left = e.pageX + 'px'; p.style.top = e.pageY + 'px';
@@ -77,14 +86,8 @@
             setTimeout(() => p.remove(), 700);
         };
 
-        // Відновлення енергії
-        setInterval(() => { 
-            if(energy < 1000) { 
-                energy++; 
-                document.getElementById('energy-fill').style.width = (energy/10) + '%'; 
-                document.getElementById('energy-val').innerText = energy; 
-            } 
-        }, 1500);
+        setInterval(() => { if(energy < 1000) { energy++; document.getElementById('energy-fill').style.width = (energy/10) + '%'; document.getElementById('energy-val').innerText = energy; } }, 1500);
     </script>
 </body>
 </html>
+
