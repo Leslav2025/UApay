@@ -5,60 +5,113 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <title>UA pay</title>
     <style>
-        body { background: #000; color: white; text-align: center; font-family: sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
+        body { background: #000; color: white; text-align: center; font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; height: 100vh; overflow: hidden; user-select: none; }
+        #header { width: 90%; display: flex; justify-content: space-between; align-items: center; padding: 15px 0; }
+        #wallet-btn { background: #0088cc; border: none; padding: 8px 15px; border-radius: 20px; color: #fff; font-weight: bold; cursor: pointer; }
+        #score-container { margin-top: 20px; }
+        #score { font-size: 60px; font-weight: 800; margin: 0; }
+        .coin-wrap { position: relative; margin-top: 30px; }
+        #coin { width: 260px; height: 260px; border-radius: 50%; cursor: pointer; transition: transform 0.05s; }
+        #coin:active { transform: scale(0.95); }
         
-        #header { position: absolute; top: 15px; width: 90%; display: flex; justify-content: space-between; align-items: center; }
-        #user-info { font-size: 14px; color: #aaa; text-align: left; }
-        
-        #wallet-btn { background: #0088cc; color: white; border: none; padding: 8px 15px; border-radius: 20px; font-weight: bold; cursor: pointer; font-size: 13px; box-shadow: 0 0 10px rgba(0, 136, 204, 0.4); }
+        /* Енергія */
+        #energy-wrap { width: 80%; margin-top: 40px; }
+        #energy-bar { width: 100%; height: 10px; background: #333; border-radius: 10px; overflow: hidden; }
+        #energy-fill { width: 100%; height: 100%; background: linear-gradient(90deg, #ffcc00, #ffee00); transition: width 0.2s; }
+        #energy-text { margin-top: 5px; font-size: 14px; color: #aaa; }
 
-        h1 { font-size: 70px; margin: 10px 0; color: #fff; text-shadow: 0 0 15px rgba(255,255,255,0.2); transition: transform 0.1s; }
-        .coin-container { width: 280px; height: 280px; }
-        img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; cursor: pointer; transition: transform 0.05s; box-shadow: 0 0 40px rgba(255, 204, 0, 0.3); }
-        img:active { transform: scale(0.95); }
+        /* Нижнє меню */
+        #nav { position: absolute; bottom: 20px; width: 90%; background: #111; display: flex; justify-content: space-around; padding: 10px; border-radius: 15px; border: 1px solid #222; }
+        .nav-item { font-size: 12px; color: #888; cursor: pointer; }
+        .nav-item.active { color: #fff; font-weight: bold; }
+
+        /* Анімація +1 */
+        .plus-one { position: absolute; color: white; font-size: 24px; font-weight: bold; animation: moveUp 0.8s ease-out forwards; pointer-events: none; }
+        @keyframes moveUp { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-100px); } }
     </style>
 </head>
 <body>
 
     <div id="header">
-        <div id="user-info">Гравець:<br><b id="user-name">Завантаження...</b></div>
-        <button id="wallet-btn" onclick="connectWallet()">Connect Wallet</button>
+        <div style="text-align: left; font-size: 14px; color: #888;">Гравець:<br><b id="user-name">...</b></div>
+        <button id="wallet-btn" onclick="tg.showAlert('Coming Soon')">Wallet</button>
     </div>
 
-    <h1 id="score">0</h1>
-    
-    <div class="coin-container">
-        <img id="coin" src="1774571977298.png" alt="Coin">
+    <div id="score-container">
+        <p id="score">0</p>
+    </div>
+
+    <div class="coin-wrap">
+        <img id="coin" src="1774571977298.png" alt="UA Coin">
+    </div>
+
+    <div id="energy-wrap">
+        <div id="energy-bar"><div id="energy-fill"></div></div>
+        <div id="energy-text">⚡ <span id="energy-val">1000</span> / 1000</div>
+    </div>
+
+    <div id="nav">
+        <div class="nav-item active">Клікер</div>
+        <div class="nav-item" onclick="tg.showAlert('Секція Друзі скоро!')">Друзі</div>
+        <div class="nav-item" onclick="tg.showAlert('Лідерборд оновиться згодом')">ТОП</div>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-
-        const userName = document.getElementById('user-name');
-        const scoreEl = document.getElementById('score');
         
-        if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-            userName.innerText = tg.initDataUnsafe.user.first_name + (tg.initDataUnsafe.user.last_name ? " " + tg.initDataUnsafe.user.last_name : "");
-        } else {
-            userName.innerText = "Гість";
-        }
+        let score = parseInt(localStorage.getItem('ua_pay_score')) || 0;
+        let energy = 1000;
+        const maxEnergy = 1000;
 
-        let s = parseInt(localStorage.getItem('ua_pay_score')) || 0;
-        scoreEl.innerText = s;
+        document.getElementById('score').innerText = score;
+        document.getElementById('user-name').innerText = tg.initDataUnsafe?.user?.first_name || "Гість";
 
-        document.getElementById('coin').onclick = () => {
-            s++;
-            scoreEl.innerText = s;
-            localStorage.setItem('ua_pay_score', s);
-            if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+        const coin = document.getElementById('coin');
+        const scoreEl = document.getElementById('score');
+        const energyFill = document.getElementById('energy-fill');
+        const energyVal = document.getElementById('energy-val');
+
+        coin.onclick = (e) => {
+            if (energy <= 0) {
+                tg.HapticFeedback.notificationOccurred('error');
+                return;
+            }
+
+            // Логіка кліку
+            score++;
+            energy--;
+            
+            scoreEl.innerText = score;
+            localStorage.setItem('ua_pay_score', score);
+            updateEnergy();
+
+            // Анімація +1
+            const p = document.createElement('div');
+            p.innerText = '+1';
+            p.className = 'plus-one';
+            p.style.left = e.pageX + 'px';
+            p.style.top = e.pageY + 'px';
+            document.body.appendChild(p);
+            setTimeout(() => p.remove(), 800);
+
+            if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
         };
 
-        function connectWallet() {
-            tg.showAlert("Функція підключення TON гаманця розробляється. Скоро ви зможете виводити свої UA pay!");
+        function updateEnergy() {
+            const percent = (energy / maxEnergy) * 100;
+            energyFill.style.width = percent + '%';
+            energyVal.innerText = energy;
         }
+
+        // Регенерація енергії
+        setInterval(() => {
+            if (energy < maxEnergy) {
+                energy += 1;
+                updateEnergy();
+            }
+        }, 1500);
     </script>
 </body>
 </html>
