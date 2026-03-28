@@ -5,112 +5,66 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { background: #000; color: white; text-align: center; font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; height: 100vh; overflow: hidden; user-select: none; }
+        body { background: #000; color: white; text-align: center; font-family: sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; height: 100vh; overflow: hidden; user-select: none; }
         #header { width: 90%; display: flex; justify-content: space-between; align-items: center; padding: 15px 0; }
-        #wallet-btn { background: #0088cc; border: none; padding: 8px 15px; border-radius: 20px; color: #fff; font-weight: bold; cursor: pointer; }
-        #score-container { margin-top: 20px; }
-        #score { font-size: 60px; font-weight: 800; margin: 0; }
-        .coin-wrap { position: relative; margin-top: 30px; }
-        #coin { width: 260px; height: 260px; border-radius: 50%; cursor: pointer; transition: transform 0.05s; }
+        #wallet-btn { background: #0088cc; border: none; padding: 8px 15px; border-radius: 20px; color: #fff; font-weight: bold; }
+        #score { font-size: 60px; font-weight: 800; margin: 10px 0; }
+        
+        /* Виправлення монети */
+        .coin-wrap { width: 280px; height: 280px; position: relative; margin: 20px auto; }
+        .coin-circle { width: 100%; height: 100%; border-radius: 50%; overflow: hidden; border: 4px solid #333; box-shadow: 0 0 30px rgba(255,204,0,0.3); }
+        #coin { width: 100%; height: 100%; object-fit: cover; cursor: pointer; transition: transform 0.05s; }
         #coin:active { transform: scale(0.95); }
         
-        /* Енергія */
-        #energy-wrap { width: 80%; margin-top: 40px; }
+        #energy-wrap { width: 80%; margin-top: 30px; }
         #energy-bar { width: 100%; height: 10px; background: #333; border-radius: 10px; overflow: hidden; }
-        #energy-fill { width: 100%; height: 100%; background: linear-gradient(90deg, #ffcc00, #ffee00); transition: width 0.2s; }
-        #energy-text { margin-top: 5px; font-size: 14px; color: #aaa; }
-
-        /* Нижнє меню */
-        #nav { position: absolute; bottom: 20px; width: 90%; background: #111; display: flex; justify-content: space-around; padding: 10px; border-radius: 15px; border: 1px solid #222; }
-        .nav-item { font-size: 12px; color: #888; cursor: pointer; }
-        .nav-item.active { color: #fff; font-weight: bold; }
-
-        /* Анімація +1 */
-        .plus-one { position: absolute; color: white; font-size: 24px; font-weight: bold; animation: moveUp 0.8s ease-out forwards; pointer-events: none; }
-        @keyframes moveUp { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-100px); } }
+        #energy-fill { width: 100%; height: 100%; background: #ffcc00; transition: width 0.2s; }
+        #nav { position: absolute; bottom: 20px; width: 90%; background: #111; display: flex; justify-content: space-around; padding: 12px; border-radius: 15px; border: 1px solid #222; }
+        .plus-one { position: absolute; color: white; font-size: 26px; font-weight: bold; animation: up 0.7s forwards; pointer-events: none; }
+        @keyframes up { to { opacity: 0; transform: translateY(-100px); } }
     </style>
 </head>
 <body>
-
     <div id="header">
-        <div style="text-align: left; font-size: 14px; color: #888;">Гравець:<br><b id="user-name">...</b></div>
+        <div style="text-align:left;font-size:12px;color:#888">Гравець:<br><b id="user-name">...</b></div>
         <button id="wallet-btn" onclick="tg.showAlert('Coming Soon')">Wallet</button>
     </div>
-
-    <div id="score-container">
-        <p id="score">0</p>
-    </div>
-
+    <h1 id="score">0</h1>
     <div class="coin-wrap">
-        <img id="coin" src="1774571977298.png" alt="UA Coin">
+        <div class="coin-circle">
+            <img id="coin" src="1774571977298.png?v=3" alt="UA">
+        </div>
     </div>
-
     <div id="energy-wrap">
         <div id="energy-bar"><div id="energy-fill"></div></div>
-        <div id="energy-text">⚡ <span id="energy-val">1000</span> / 1000</div>
+        <div style="margin-top:5px">⚡ <span id="energy-val">1000</span> / 1000</div>
     </div>
-
-    <div id="nav">
-        <div class="nav-item active">Клікер</div>
-        <div class="nav-item" onclick="tg.showAlert('Секція Друзі скоро!')">Друзі</div>
-        <div class="nav-item" onclick="tg.showAlert('Лідерборд оновиться згодом')">ТОП</div>
-    </div>
+    <div id="nav"><div style="color:#fff">Клікер</div><div style="color:#555">Друзі</div><div style="color:#555">ТОП</div></div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-        
         let score = parseInt(localStorage.getItem('ua_pay_score')) || 0;
         let energy = 1000;
-        const maxEnergy = 1000;
-
         document.getElementById('score').innerText = score;
         document.getElementById('user-name').innerText = tg.initDataUnsafe?.user?.first_name || "Гість";
 
-        const coin = document.getElementById('coin');
-        const scoreEl = document.getElementById('score');
-        const energyFill = document.getElementById('energy-fill');
-        const energyVal = document.getElementById('energy-val');
-
-        coin.onclick = (e) => {
-            if (energy <= 0) {
-                tg.HapticFeedback.notificationOccurred('error');
-                return;
-            }
-
-            // Логіка кліку
-            score++;
-            energy--;
-            
-            scoreEl.innerText = score;
+        document.getElementById('coin').onclick = (e) => {
+            if (energy <= 0) return;
+            score++; energy--;
+            document.getElementById('score').innerText = score;
             localStorage.setItem('ua_pay_score', score);
-            updateEnergy();
+            document.getElementById('energy-fill').style.width = (energy/10) + '%';
+            document.getElementById('energy-val').innerText = energy;
 
-            // Анімація +1
             const p = document.createElement('div');
-            p.innerText = '+1';
-            p.className = 'plus-one';
-            p.style.left = e.pageX + 'px';
-            p.style.top = e.pageY + 'px';
+            p.innerText = '+1'; p.className = 'plus-one';
+            p.style.left = e.pageX + 'px'; p.style.top = e.pageY + 'px';
             document.body.appendChild(p);
-            setTimeout(() => p.remove(), 800);
-
+            setTimeout(() => p.remove(), 700);
             if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
         };
-
-        function updateEnergy() {
-            const percent = (energy / maxEnergy) * 100;
-            energyFill.style.width = percent + '%';
-            energyVal.innerText = energy;
-        }
-
-        // Регенерація енергії
-        setInterval(() => {
-            if (energy < maxEnergy) {
-                energy += 1;
-                updateEnergy();
-            }
-        }, 1500);
+        setInterval(() => { if(energy < 1000) { energy++; document.getElementById('energy-fill').style.width = (energy/10) + '%'; document.getElementById('energy-val').innerText = energy; } }, 1500);
     </script>
 </body>
 </html>
