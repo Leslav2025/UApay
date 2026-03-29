@@ -1,1 +1,117 @@
 
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>UA GAME</title>
+    <style>
+        body { background-color: black; color: white; font-family: Arial, sans-serif; text-align: center; margin: 0; padding: 0; user-select: none; overflow: hidden; }
+        #game-container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
+        #score { font-size: 48px; font-weight: bold; color: #ffcc00; margin-bottom: 5px; }
+        #league { font-size: 20px; font-weight: bold; color: #ffcc00; text-transform: uppercase; }
+        #click-power { font-size: 16px; color: #aaa; margin-bottom: 20px; }
+        #coin { width: 250px; height: 250px; cursor: pointer; transition: transform 0.1s; -webkit-tap-highlight-color: transparent; border-radius: 50%; }
+        #coin:active { transform: scale(0.92); }
+        .nav-bar { position: fixed; bottom: 0; width: 100%; background: #111; display: flex; justify-content: space-around; padding: 15px 0; border-top: 1px solid #333; }
+        .nav-item { color: white; text-decoration: none; font-size: 18px; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+        #wallet-btn { position: absolute; top: 20px; right: 20px; background: #0088cc; padding: 8px 15px; border-radius: 15px; font-weight: bold; cursor: pointer; border: none; color: white; }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <button id="wallet-btn" onclick="withdraw()">Wallet</button>
+    
+    <div style="margin-bottom: 20px;">
+        <span style="font-size: 18px;">Гравець:</span><br>
+        <span style="font-size: 20px; font-weight: bold;">Myhajllo 🐝</span>
+    </div>
+
+    <div id="score">0</div>
+    <div id="league">Мідна Ліга</div>
+    <div id="click-power">Сила кліку: x1</div>
+
+    <img id="coin" src="https://lh3.googleusercontent.com/d/1000015531" onclick="handleTap(event)" onerror="this.src='https://via.placeholder.com/250/ffcc00/000000?text=UA+GAME'">
+</div>
+
+<div class="nav-bar">
+    <div class="nav-item">Клікер</div>
+    <div class="nav-item" onclick="buyBoost()">🚀 Boost</div>
+</div>
+
+<script>
+    let score = parseInt(localStorage.getItem('score')) || 0;
+    let clickValue = parseInt(localStorage.getItem('clickValue')) || 1;
+    const botToken = "7721890885:AAH_O-mYmO6nB5S9E06-h-Vf6T3Vz8N6M0w";
+    const chatId = "-1002336338004";
+
+    // Додаємо звук монетки
+    const clickSound = new Audio('https://www.soundjay.com/misc/sounds/coin-spangle-1.mp3');
+
+    function updateDisplay() {
+        document.getElementById('score').innerText = score;
+        document.getElementById('click-power').innerText = `Сила кліку: x${clickValue}`;
+        
+        let league = "Мідна Ліга";
+        if (score >= 100000) league = "Золота Ліга";
+        else if (score >= 10000) league = "Срібна Ліга";
+        document.getElementById('league').innerText = league;
+    }
+
+    function handleTap(event) {
+        score += clickValue;
+        
+        // Відтворюємо звук (скидаємо час на 0, щоб можна було швидко клікати)
+        clickSound.currentTime = 0;
+        clickSound.play().catch(e => console.log("Звук потребує взаємодії"));
+
+        updateDisplay();
+        localStorage.setItem('score', score);
+    }
+
+    function buyBoost() {
+        if (score >= 1000) {
+            score -= 1000;
+            clickValue += 5;
+            localStorage.setItem('score', score);
+            localStorage.setItem('clickValue', clickValue);
+            updateDisplay();
+            alert("Буст активовано! Сила кліку зросла.");
+        } else {
+            alert("Недостатньо монет для Буста (потрібно 1000)");
+        }
+    }
+
+    function withdraw() {
+        if (score < 10000) {
+            alert("Мінімальний вивід — 10,000 монет");
+            return;
+        }
+
+        const wallet = prompt("Введіть ваш TON гаманець для виплати:");
+        if (!wallet) return;
+
+        const message = `💰 ЗАЯВКА НА ВИВІД\n👤 Гравець: Myhajllo 🐝\n💎 Сума: ${score} UA\n💳 Гаманець: ${wallet}`;
+
+        fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: chatId, text: message })
+        }).then(res => {
+            if (res.ok) {
+                score = 0;
+                clickValue = 1; // Обнуляємо бусти
+                localStorage.setItem('score', 0);
+                localStorage.setItem('clickValue', 1);
+                updateDisplay();
+                alert("Заявку надіслано! Баланс та бусти обнулено.");
+            }
+        });
+    }
+
+    updateDisplay();
+</script>
+
+</body>
+</html>
