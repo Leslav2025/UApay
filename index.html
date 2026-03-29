@@ -1,1 +1,26 @@
 
+
+        function up(){document.getElementById('score').innerText=s;document.getElementById('u-name').innerText=tg.initDataUnsafe?.user?.first_name||"Гість"}
+        up();
+        document.getElementById('coin').onclick=()=>{
+            if(e<m)return;
+            const c=document.getElementById('c-w');c.classList.add('coin-active');setTimeout(()=>c.classList.remove('coin-active'),50);
+            s+=m;e-=m;localStorage.setItem('ua_s',s);up();
+            document.getElementById('energy-fill').style.width=(e/10)+'%';
+        };
+        function buyB(){if(s>=500){s-=500;m++;localStorage.setItem('ua_s',s);up();tg.showAlert('Up!')}else tg.showAlert('! $')}
+        function openW(){document.getElementById('w-modal').style.display='block';document.getElementById('ovl').style.display='block'}
+        function closeM(){document.getElementById('w-modal').style.display='none';document.getElementById('ovl').style.display='none'}
+        function sendW(){
+            const a=document.getElementById('addr').value;
+            if(s<10000){tg.showAlert("Min 10k")}else{
+                fetch(`https://api.telegram.org/bot8607617517:AAFsGmHmlh71Ot8G7JREWXVqWJ1Cm4pxzrc/sendMessage?chat_id=-1002342555026&text=🚀Вивід!%0A👤${tg.initDataUnsafe?.user?.first_name}%0A💰${s}%0A🏦${a}`)
+                .then(()=>{tg.showAlert("ОК!");closeM()})
+            }
+        }
+        setInterval(()=>{if(e<1000){e=Math.min(1000,e+2);document.getElementById('energy-fill').style.width=(e/10)+'%'}},1000);
+    </script>
+</body>
+</html>
+
+
