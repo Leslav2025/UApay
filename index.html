@@ -1,1 +1,111 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>UA GAME</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body { background-color: black; color: white; font-family: Arial, sans-serif; text-align: center; margin: 0; padding: 0; user-select: none; overflow: hidden; }
+        #game-container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
+        #score { font-size: 44px; font-weight: bold; color: #ffcc00; margin-bottom: 5px; }
+        #league { font-size: 20px; font-weight: bold; color: #ffcc00; text-transform: uppercase; }
+        #click-power { font-size: 16px; color: #aaa; margin-bottom: 25px; }
+        #wallet-btn { position: absolute; top: 20px; right: 20px; background: #0088cc; padding: 10px 20px; border-radius: 15px; font-weight: bold; cursor: pointer; border: none; color: white; }
+        #coin {
+            width: 300px; height: 300px; border-radius: 50%; cursor: pointer;
+            background-image: url('1774824626028.png');
+            background-size: contain; background-position: center; background-repeat: no-repeat;
+            margin: 20px auto;
+        }
+        .nav-bar { position: fixed; bottom: 0; width: 100%; background: #111; display: flex; justify-content: space-around; padding: 15px 0; border-top: 1px solid #333; }
+        .nav-item { color: white; text-decoration: none; font-size: 18px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="wallet-btn" onclick="withdraw()">Wallet</div>
+    <div style="margin-top: 50px; margin-bottom: 15px;">
+        <span style="font-size: 18px; color: #888;">Гравець:</span><br>
+        <span id="user-name" style="font-size: 22px; font-weight: bold;">Завантаження...</span>
+    </div>
+    <div id="score">0</div>
+    <div id="league">Мідна Ліга</div>
+    <div id="click-power">Сила кліку: x1</div>
+    <div id="coin" onclick="handleTap(event)"></div>
+</div>
+
+<div class="nav-bar">
+    <div class="nav-item">Клікер</div>
+    <div class="nav-item" onclick="buyBoost()">🚀 Boost</div>
+</div>
+
+<script>
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+    const user = tg.initDataUnsafe?.user;
+    const userId = user ? user.id : "guest";
+    const firstName = user ? user.first_name : "Гравець";
+    document.getElementById('user-name').innerText = firstName + " 🐝";
+
+    const storageKey = `score_${userId}`;
+    const boostKey = `boost_${userId}`;
+    let score = parseInt(localStorage.getItem(storageKey)) || 0;
+    let clickValue = parseInt(localStorage.getItem(boostKey)) || 1;
+
+    function updateDisplay() {
+        document.getElementById('score').innerText = score;
+        document.getElementById('click-power').innerText = `Сила кліку: x${clickValue}`;
+        let leagueName = "Мідна Ліга";
+        if (score >= 100000) leagueName = "Золота Ліга";
+        else if (score >= 10000) leagueName = "Срібна Ліга";
+        document.getElementById('league').innerText = leagueName;
+    }
+
+    function handleTap(event) {
+        score += clickValue;
+        updateDisplay();
+        localStorage.setItem(storageKey, score);
+    }
+
+    function buyBoost() {
+        if (score >= 1000) {
+            score -= 1000;
+            clickValue += 5;
+            localStorage.setItem(storageKey, score);
+            localStorage.setItem(boostKey, clickValue);
+            updateDisplay();
+            alert("Буст активовано!");
+        } else {
+            alert("Недостатньо монет");
+        }
+    }
+
+    function withdraw() {
+        if (score < 10000) {
+            alert("Мінімалка 10,000!");
+            return;
+        }
+        const wallet = prompt("Твій TON гаманець:");
+        if (!wallet) return;
+
+        const message = `💰 ЗАЯВКА НА ВИВІД\n👤 Гравець: ${firstName} (ID: ${userId})\n💎 Сума: ${score} UA\n💳 Гаманець: ${wallet}`;
+        fetch(`https://api.telegram.org/bot8607617517:AAFsGmHmlh71Ot8G7JREWXVqWJ1Cm4pxzrc/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: "-1001451233135", text: message })
+        }).then(res => {
+            if (res.ok) {
+                score = 0;
+                localStorage.setItem(storageKey, 0);
+                updateDisplay();
+                alert("Заявку надіслано успішно!");
+            }
+        });
+    }
+    updateDisplay();
+</script>
+</body>
+</html>
 
